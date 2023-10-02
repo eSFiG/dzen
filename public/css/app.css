@@ -1,0 +1,78 @@
+.content, .table, form, p {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+div.for_form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 350px;
+    background-color: #176B87;
+    border-radius: 4px;
+    box-shadow: 0 1em 3em #176B87;
+}
+
+.table {
+    margin-bottom: 10px;
+}
+
+.title, .body {
+    display: flex;
+    flex-direction: row;
+}
+
+.title {
+    background-color: #053B50;
+    color: white;
+}
+
+.body {
+    background-color: #64CCC5;
+    border-top: 3px solid white;
+    border-collapse: collapse;
+}
+
+.cell, .reply {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+p.for_form {
+    margin: 5px;
+    font-size: 13pt;
+    color: white;
+}
+
+.form {
+    width: 300px;
+}
+
+textarea#text {
+    height: 120px;
+    resize: none;
+}
+
+#add_comment {
+    margin: 10px;
+}
+
+.error {
+    background: #FF851B;
+    padding: 5px 10px;
+    margin: 5px 10px;
+    border: none;
+    color: white;
+    width: auto;
+}
+
+body {
+    background-color: #EEEEEE;
+}
