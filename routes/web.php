@@ -16,4 +16,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CommentController::class, 'list']);
 Route::get('/sort/{name}/{dir}', [CommentController::class, 'list']);
-Route::get('/replies/{id}', [CommentController::class, 'replies']);
+Route::get('/replies/{id}/{page}', [CommentController::class, 'replies']);
