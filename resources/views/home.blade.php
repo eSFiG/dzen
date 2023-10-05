@@ -16,16 +16,31 @@
         <div class="cell" style="width: 200px" onclick="window.location='/sort/created_at/{{$dir}}?page={{$pagination->currentPage()}}';">Created at</div>
         <div class="cell" style="width: 74px"></div>
     </div>
-    <div>
+    <div id="comments">
     @foreach($comments as $comment)
-        <div class="body">
+        <div id="{{$comment->id}}" class="body">
             <div class="cell" style="width: 150px">{{ $comment->user_name }}</div>
             <div class="cell" style="width: 250px">{{ $comment->email }}</div>
             <div class="cell" style="width: 350px">{{ $comment->text }}</div>
             <div class="cell" style="width: 200px">{{ $comment->created_at }}</div>
-            <div class="cell"><input type="image" src="{{ asset('/reply.png') }}" onclick="reply({{ $comment->id }});"></div>
-            <div class="cell"><input type="image" src="{{ asset('/chat.png') }}" onclick="window.location='/replies/{{ $comment->id }}';"></div>
+            <div class="cell"><input type="image" src="{{ asset('/reply.png') }}" onclick="reply({{ $comment->id }}); location.hash = ' '; location.hash = '#comment_form'"></div>
+            <div class="cell"><input type="image" src="{{ asset('/chat.png') }}" onclick="window.location='/replies/{{ $comment->id }}/{{$pagination->currentPage()}}';"></div>
         </div>
+        @php($i=1)
+        @foreach($comment->replies as $reply)
+            @if($i > 3)
+                @break
+            @endif
+            <div id="comments" style="margin-left: 30px">
+                <div class="body">
+                    <div class="reply" style="width: 150px">{{ $reply->user_name }}</div>
+                    <div class="reply" style="width: 250px">{{ $reply->email }}</div>
+                    <div class="reply" style="width: 350px">{{ $reply->text }}</div>
+                    <div class="reply" style="width: 255px">{{ $reply->created_at }}</div>
+                </div>
+            </div>
+            @php($i++)
+        @endforeach
     @endforeach
     </div>
 </div>
@@ -33,7 +48,7 @@
     {{ $pagination->links() }}
 </div>
 
-<form name="comment_form" onsubmit="event.preventDefault(); validate();">
+<form id="comment_form" name="comment_form" onsubmit="event.preventDefault(); validate();">
     @csrf
     <div class="for_form">
     <p class="for_form">Enter user:</p>
@@ -69,8 +84,8 @@
 <script type="text/javascript">
     let key, img;
     function getCaptcha() {
+        $('#captcha').val(' ');
         $.get('http://dzen.oneb.pro/captcha/api/math').done(function (response) {
-            console.log(response.key);
             key = response.key;
             img = "data:image/png;base64," + response.img;
             $("#captcha_img").attr('src', response.img);
@@ -146,8 +161,89 @@
         }
     }
 
+    function create(data, name) {
+        let body = document.createElement('div'),
+            replies = document.createElement('div'),
+            user = document.createElement('div'),
+            email = document.createElement('div'),
+            text = document.createElement('div'),
+            time = document.createElement('div'),
+            reply = document.createElement('div'),
+            reply_button = document.createElement('input'),
+            comments = document.createElement('div'),
+            comments_button = document.createElement('input');
+        replies.setAttribute('style', 'margin-left: 30px')
+        body.setAttribute('class', 'body');
+        user.setAttribute('class', name);
+        user.setAttribute('style', 'width: 150px');
+        user.innerHTML = data.user_name;
+        body.appendChild(user);
+
+        email.setAttribute('class', name);
+        email.setAttribute('style', 'width: 250px');
+        email.innerHTML = data.email;
+        body.appendChild(email);
+
+        text.setAttribute('class', name);
+        text.setAttribute('style', 'width: 350px');
+        text.innerHTML = data.text;
+        body.appendChild(text);
+
+        time.setAttribute('class', name);
+        if (data.parent_id) {
+            time.setAttribute('style', 'width: 255px');
+        } else {
+            time.setAttribute('style', 'width: 200px');
+        }
+        let date = new Date(data.created_at);
+        time.innerHTML =
+            date.getFullYear() + "-" +
+            ("00" + (date.getMonth() + 1)).slice(-2) + "-" +
+            ("00" + date.getDate()).slice(-2) + " " +
+            ("00" + date.getHours()).slice(-2) + ":" +
+            ("00" + date.getMinutes()).slice(-2) + ":" +
+            ("00" + date.getSeconds()).slice(-2);
+        body.appendChild(time);
+        if (data.parent_id) {
+            replies.appendChild(body);
+            $('#' + data.parent_id).after(replies);
+            location.hash = ' ';
+            location.hash = '#' + data.parent_id;
+        }
+        else {
+        reply.setAttribute('class', name);
+        reply_button.setAttribute('type', 'image');
+        reply_button.setAttribute('src', '{{ asset('/reply.png') }}');
+        reply_button.setAttribute('onclick', 'reply(' + data.id + ');');
+        reply.appendChild(reply_button);
+        body.appendChild(reply);
+
+        comments.setAttribute('class', name);
+        comments_button.setAttribute('type', 'image');
+        comments_button.setAttribute('src', '{{ asset('/chat.png') }}');
+        comments_button.setAttribute('onclick', 'window.location="/replies/' + data.id + '";');
+        comments.appendChild(comments_button);
+        body.appendChild(comments);
+        document.getElementById('comments').appendChild(body);
+        }
+    }
+
     function request(data) {
-        $.post('http://dzen.oneb.pro/api/save', data).fail(function (status) {
+        $.post('http://dzen.oneb.pro/api/save', data).done(function (response) {
+            if (response.data.parent_id) {
+                if (response.count <= 3) {
+                    create(response.data, 'reply');
+                }
+                $('#text').val(' ');
+                getCaptcha();
+            }
+            else {
+                create(response.data, 'cell');
+                $('#text').val(' ');
+                getCaptcha();
+            }
+        })
+        .fail(function (status) {
             if(status.responseJSON.errors.captcha) {
                 document.getElementById('captcha_err').hidden = false;
                 getCaptcha();

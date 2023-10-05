@@ -15,27 +15,28 @@
         <div class="cell" style="width: 350px">Text</div>
         <div class="cell" style="width: 200px">Created at</div>
     </div>
-    <div>
+    <div id="comments">
         <div class="body">
             <div class="cell" style="width: 150px">{{ $comment->user_name }}</div>
             <div class="cell" style="width: 250px">{{ $comment->email }}</div>
             <div class="cell" style="width: 350px">{{ $comment->text }}</div>
             <div class="cell" style="width: 200px">{{ $comment->created_at }}</div>
-
         </div>
         @if($comment->replies)
             @foreach($comment->replies as $reply)
+                <div style="margin-left: 30px">
                 <div class="body">
                     <div class="reply" style="width: 150px">{{ $reply->user_name }}</div>
                     <div class="reply" style="width: 250px">{{ $reply->email }}</div>
                     <div class="reply" style="width: 350px">{{ $reply->text }}</div>
                     <div class="reply" style="width: 200px">{{ $reply->created_at }}</div>
                 </div>
+                </div>
             @endforeach
         @endif
     </div>
 </div>
-<input class="m-3" type="button" value="Back" onclick="window.location='/'">
+<input class="m-3" type="button" value="Back" onclick="window.location='/?page={{$page}}'">
 
 <form name="comment_form" onsubmit="event.preventDefault(); validate();">
     @csrf
@@ -74,7 +75,6 @@
     let key, img;
     function getCaptcha() {
         $.get('http://dzen.oneb.pro/captcha/api/math').done(function (response) {
-            console.log(response.key);
             key = response.key;
             img = "data:image/png;base64," + response.img;
             $("#captcha_img").attr('src', response.img);
@@ -150,12 +150,52 @@
         }
     }
 
+    function create(data) {
+        let body = document.createElement('div'),
+            reply = document.createElement('div'),
+            user = document.createElement('div'),
+            email = document.createElement('div'),
+            text = document.createElement('div'),
+            time = document.createElement('div');
+        body.setAttribute('class', 'body');
+        reply.setAttribute('style', 'margin-left: 30px');
+        user.setAttribute('class', 'reply');
+        user.setAttribute('style', 'width: 150px');
+        user.innerHTML = data.user_name;
+        body.appendChild(user);
+
+        email.setAttribute('class', 'reply');
+        email.setAttribute('style', 'width: 250px');
+        email.innerHTML = data.email;
+        body.appendChild(email);
+
+        text.setAttribute('class', 'reply');
+        text.setAttribute('style', 'width: 350px');
+        text.innerHTML = data.text;
+        body.appendChild(text);
+
+        time.setAttribute('class', 'reply');
+        time.setAttribute('style', 'width: 200px');
+        let date = new Date(data.created_at);
+        time.innerHTML =
+            date.getFullYear() + "-" +
+            ("00" + (date.getMonth() + 1)).slice(-2) + "-" +
+            ("00" + date.getDate()).slice(-2) + " " +
+            ("00" + date.getHours()).slice(-2) + ":" +
+            ("00" + date.getMinutes()).slice(-2) + ":" +
+            ("00" + date.getSeconds()).slice(-2);
+        body.appendChild(time);
+        reply.appendChild(body);
+        document.getElementById('comments').appendChild(reply);
+    }
+
     function request(data) {
-        $.post('http://dzen.oneb.pro/api/save', data).done(function (response, status) {
-            console.log(response.message);
-            console.log(status)
-        }).fail(function (status) {
-            console.log(status);
+        $.post('http://dzen.oneb.pro/api/save', data).done(function (response) {
+            create(response.data);
+            $('#text').val(' ');
+            getCaptcha();
+        })
+        .fail(function (status) {
             if(status.responseJSON.errors.captcha) {
                 document.getElementById('captcha_err').hidden = false;
                 getCaptcha();

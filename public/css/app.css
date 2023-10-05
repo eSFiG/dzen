@@ -55,6 +55,10 @@ p.for_form {
     width: 300px;
 }
 
+.reply {
+    background-color: #7bcdd7;
+}
+
 textarea#text {
     height: 120px;
     resize: none;
