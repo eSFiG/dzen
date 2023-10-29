@@ -4,14 +4,45 @@
     align-items: center;
 }
 
-div.for_form {
+div.for_form, .forms {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 350px;
+    width: 700px;
     background-color: #176B87;
     border-radius: 4px;
     box-shadow: 0 1em 3em #176B87;
+}
+
+.form_elements {
+    display: flex;
+    flex-direction: row;
+    margin-top: 15px;
+}
+
+.element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 5px;
+}
+
+#text {
+    width: 610px;
+}
+
+.captcha {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#refresh {
+    height: 30px;
+}
+
+#dropzone {
+    width: 610px;
 }
 
 .table {

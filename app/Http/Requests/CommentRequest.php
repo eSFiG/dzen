@@ -16,7 +16,8 @@ class CommentRequest extends FormRequest {
             'email' => 'required|max:255',
             'parent_id' => 'max:255',
             'text' => 'required',
-            'captcha' => 'required|captcha_api:' . request('key') . ',math'
+            'captcha' => 'required|captcha_api:' . request('key') . ',math',
+            'ids' => 'max:31',
         ];
     }
 

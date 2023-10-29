@@ -14,8 +14,8 @@ return [
     ],
     'math' => [
         'length' => 6,
-        'width' => 120,
-        'height' => 36,
+        'width' => 210,
+        'height' => 70,
         'quality' => 90,
         'math' => false,
     ],

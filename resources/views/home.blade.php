@@ -1,9 +1,12 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>Comments</title>
     <link rel="stylesheet" type="text/css" href="{{ asset('/css/app.css?ver='.rand(0, 10000)) }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.0/min/dropzone.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
 <body onload="getCaptcha();">
@@ -48,27 +51,31 @@
     {{ $pagination->links() }}
 </div>
 
+<div class="forms">
 <form id="comment_form" name="comment_form" onsubmit="event.preventDefault(); validate();">
     @csrf
     <div class="for_form">
-    <p class="for_form">Enter user:</p>
-    <input class="form" id="user_name" type="text" name="user_name" placeholder="User">
-    <div class="error" id="user_val" hidden>Please, type in user</div>
+    <div class="form_elements">
+    <div class="element">
+        <input class="form" id="user_name" type="text" name="user_name" placeholder="User">
+        <div class="error" id="user_val" hidden>Please, type in user</div>
+    </div>
+    <div class="element">
+        <input class="form" id="email" type="text" name="email" placeholder="email@example.com">
+        <div class="error" id="email_val" hidden>Please, type in email</div>
+        <div class="error" id="email_form" hidden>Please, type in correct format of email</div>
+    </div>
+    </div>
 
-    <p class="for_form">Enter email:</p>
-    <input class="form" id="email" type="text" name="email" placeholder="email@example.com">
-    <div class="error" id="email_val" hidden>Please, type in email</div>
-    <div class="error" id="email_form" hidden>Please, type in correct format of email</div>
+    <input class="form" id="parent_id" type="text" name="parent_id" hidden>
 
-    <p class="for_form">Enter home page:</p>
-    <input class="form" id="parent_id" type="text" name="parent_id" placeholder="Home page">
-
-    <p class="for_form">Enter comment:</p>
     <textarea class="form" id="text" name="text" placeholder="Comment"></textarea>
     <div class="error" id="text_val" hidden>Please, type in comment</div>
 
+    <div class="captcha">
     <img id="captcha_img" class="m-2"></img>
-    <input class="m-1" type="button" name="refresh" value="Resfresh" onclick="getCaptcha()">
+    <button class="m-1" type="button" id="refresh" name="refresh" onclick="getCaptcha()"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
     <input type="text" id="captcha" name="captcha">
     <div class="error" id="captcha_val" hidden>Please, type in captcha</div>
     <div class="error" id="captcha_err" hidden>Please, try again</div>
@@ -76,11 +83,24 @@
     <input id="add_comment" type="submit" value="Add comment">
     </div>
 </form>
+<form method="post" action="{{ url('files/store') }}" enctype="multipart/form-data" class="dropzone" id="dropzone">
+    @csrf
+    <div id="dropzonePreviewTemplate" style="display: none">
+        <div id="template-preview" class="dz-preview dz-nofile-preview">
+            <div class="small">
+                <span class="" data-dz-name></span> <span class="pull-right">(<span class="dz-size" data-dz-size></span>)</span>
+            </div>
+        </div>
+    </div>
+</form>
+<input type="submit" value="Upload">
+</div>
 </div>
 </body>
 </html>
 
 <script src="{{ asset('/js/jquery-3.7.1.js')}}" type="text/javascript"></script>
+<script src="{{ asset('/js/dropzone.min.js')}}" type="text/javascript"></script>
 <script type="text/javascript">
     let key, img;
     function getCaptcha() {
@@ -92,12 +112,52 @@
         });
     }
 
-    function reply(id, edit = true) {
+    function reply(id) {
         $('#parent_id').val(id);
-        if (!edit) {
-            $('#parent_id').prop('disabled', true);
-        }
     }
+
+    let ids = [];
+
+    Dropzone.options.dropzone = {
+        maxFilesize: 12,
+        createImageThumbnails: false,
+        acceptedFiles: ".jpeg,.jpg,.png,.gif",
+        addRemoveLinks: true,
+        timeout: 5000,
+        removedfile: function(file)
+        {
+            let name = file.upload.filename;
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'POST',
+                url: '{{ url("files/destroy") }}',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    filename: name
+                },
+                success: function (data){
+                    console.log("File has been successfully removed!!");
+                    console.log(data);
+                },
+                error: function(response) {
+                    console.log(response);
+                }});
+            let fileRef;
+            return (fileRef = file.previewElement) != null ?
+                fileRef.parentNode.removeChild(file.previewElement) : void 0;
+        },
+        success: function(file, response)
+        {
+            ids.push(response.id);
+        },
+        error: function(file, response)
+        {
+            console.log(file);
+            return false;
+        }
+    };
 
     function validate() {
         $('#user_name').change(function () {
@@ -156,6 +216,7 @@
                 "text": form.text.value,
                 "key": key,
                 "captcha": form.captcha.value,
+                "ids": ids,
             };
             request(data);
         }
@@ -235,15 +296,19 @@
                     create(response.data, 'reply');
                 }
                 $('#text').val(' ');
+                $('#parent_id').val(' ');
+                $('#comment_id').val(' ');
                 getCaptcha();
             }
             else {
                 create(response.data, 'cell');
                 $('#text').val(' ');
+                $('#parent_id').val(' ');
                 getCaptcha();
             }
         })
         .fail(function (status) {
+            console.log(status.responseJSON);
             if(status.responseJSON.errors.captcha) {
                 document.getElementById('captcha_err').hidden = false;
                 getCaptcha();
